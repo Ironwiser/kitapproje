@@ -52,8 +52,7 @@ export default function Home(){
    <div className="leaf leaf-right"><div className="background-copy"><p className="eyebrow">{book.no} / {book.year}</p><h2>{book.title}</h2><blockquote>“{book.excerpt}”</blockquote><p>{book.description}</p></div></div>
   </section>)}
 
-  <section className="floating-books" aria-labelledby="books-title">
-   <div className="floating-books-head"><p id="books-title" className="eyebrow">KİTAPLAR</p><span>Bir kitap seçin</span></div>
+  <section className="floating-books" aria-label="Kitaplar">
    <div className="floating-cards">
     {books.map(book=><button className={`floating-card ${selected?.no===book.no?'is-selected':''}`} style={{'--book':book.color,'--book-ink':book.ink} as React.CSSProperties} key={book.no} onClick={()=>showBook(book)}>
      {book.image&&<img src={book.image} alt="" aria-hidden="true"/>}
