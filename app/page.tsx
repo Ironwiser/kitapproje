@@ -1,20 +1,37 @@
 'use client';
 
 import ArrowUpRight from 'lucide-react/dist/esm/icons/arrow-up-right.mjs';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type Book={no:string;year:string;title:string;kind:string;color:string;ink:string;image?:string;excerpt:string;description:string};
 const books:Book[]=[
  {no:'01',year:'2024',title:'Sade',kind:'Roman',color:'#a9d8e8',ink:'#263b48',image:'/sade-cover.png',excerpt:'Kalbimizi maskeleyip aklın soğuk sularına mı bıraktık?',description:'Sakin kırların, açık gökyüzünün ve insanın kendi iç sesine dönüşünün dünyası. Sade; insanın gürültüden uzaklaşıp kendine, doğaya ve hatırladıklarına yeniden bakışını anlatıyor.'},
- {no:'02',year:'2023',title:'İstanbul’an Ara Hattı',kind:'Roman',color:'#a71926',ink:'#f1e8dc',image:'/istanbulan-ara-hatti-cover.png',excerpt:'Şehrin iki yakası arasında bazen tek bir ses yeter.',description:'İstanbul’un sert ritmi, kırılgan ilişkiler ve beklenmedik karşılaşmalar üzerine karanlık, çarpıcı bir roman dünyası.'},
+ {no:'02',year:'2023',title:'İstanbul–Ankara Hattı',kind:'Roman',color:'#a71926',ink:'#f1e8dc',image:'/istanbulan-ara-hatti-cover.png',excerpt:'İki şehir arasında bazen tek bir ses yeter.',description:'İstanbul ile Ankara arasındaki sert ritim, kırılgan ilişkiler ve beklenmedik karşılaşmalar üzerine karanlık, çarpıcı bir roman dünyası.'},
  {no:'03',year:'2022',title:'Yeni Kitap',kind:'Yakında',color:'#d8ff36',ink:'#18201c',excerpt:'Her yeni kitap, henüz açılmamış bir kapıdır.',description:'Yeni kitap duyurusu için ayrılmış örnek alan. Başlık, görsel ve açıklama daha sonra kolayca güncellenebilir.'},
 ];
 
 export default function Home(){
  const [selected,setSelected]=useState<Book|null>(null);
  const [open,setOpen]=useState(false);
- const showBook=(book:Book)=>{setSelected(book);requestAnimationFrame(()=>setOpen(true))};
- const closeBook=()=>{setOpen(false);window.setTimeout(()=>setSelected(null),760)};
+ const [incoming,setIncoming]=useState<Book|null>(null);
+ const [incomingOpen,setIncomingOpen]=useState(false);
+ const transitionRef=useRef(0);
+ const showBook=(book:Book)=>{
+  if(selected?.no===book.no||incoming)return;
+  const token=++transitionRef.current;
+  if(!selected){setSelected(book);requestAnimationFrame(()=>setOpen(true));return}
+  setIncoming(book);
+  setIncomingOpen(false);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>setIncomingOpen(true)));
+  window.setTimeout(()=>{if(transitionRef.current!==token)return;setSelected(book);setOpen(true);setIncoming(null);setIncomingOpen(false)},850);
+ };
+ const closeBook=()=>{
+  ++transitionRef.current;
+  setIncomingOpen(false);
+  setIncoming(null);
+  setOpen(false);
+  window.setTimeout(()=>setSelected(null),760);
+ };
  useEffect(()=>{const onKey=(e:KeyboardEvent)=>e.key==='Escape'&&selected&&closeBook();window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[selected]);
 
  return <main className="home layered-home">
@@ -30,10 +47,10 @@ export default function Home(){
    <p className="home-bio">Hafıza, ev, göç ve aidiyet duygusunu sade ama katmanlı bir dille anlatıyor.</p>
   </section>
 
-  {selected&&<section className={`book-overlay background-overlay ${open?'is-open':''}`} aria-live="polite" style={{'--detail':selected.color,'--detail-ink':selected.ink} as React.CSSProperties}>
-   <div className="leaf leaf-left"><div className="background-image">{selected.image?<img src={selected.image} alt={`${selected.title} kitap kapağı`}/>:<div className="placeholder-cover"><span>{selected.kind}</span><strong>{selected.title}</strong><small>Melahat Kanoğlu</small></div>}</div></div>
-   <div className="leaf leaf-right"><div className="background-copy"><p className="eyebrow">{selected.no} / {selected.year}</p><h2>{selected.title}</h2><blockquote>“{selected.excerpt}”</blockquote><p>{selected.description}</p></div></div>
-  </section>}
+  {[selected,incoming].map((book,index)=>book&&<section key={`${book.no}-${index}`} className={`book-overlay background-overlay ${index===0?(open?'is-open':''):(incomingOpen?'is-open incoming-overlay':'incoming-overlay')}`} aria-live="polite" style={{'--detail':book.color,'--detail-ink':book.ink} as React.CSSProperties}>
+   <div className="leaf leaf-left"><div className="background-image">{book.image?<img src={book.image} alt={`${book.title} kitap kapağı`}/>:<div className="placeholder-cover"><span>{book.kind}</span><strong>{book.title}</strong><small>Melahat Kanoğlu</small></div>}</div></div>
+   <div className="leaf leaf-right"><div className="background-copy"><p className="eyebrow">{book.no} / {book.year}</p><h2>{book.title}</h2><blockquote>“{book.excerpt}”</blockquote><p>{book.description}</p></div></div>
+  </section>)}
 
   <section className="floating-books" aria-labelledby="books-title">
    <div className="floating-books-head"><p id="books-title" className="eyebrow">KİTAPLAR</p><span>Bir kitap seçin</span></div>
@@ -49,4 +66,3 @@ export default function Home(){
   <div className="home-foot shell"><span>© 2026</span><span>Kelimeler, hatırlamanın başka bir yolu.</span></div>
  </main>;
 }
-
